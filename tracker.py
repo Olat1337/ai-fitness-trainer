@@ -16,7 +16,8 @@ class BicepCurlCounter:
         self.stage = None
         self.side = side
 
-    def calculate_angle(self ,a, b, c):
+    @staticmethod
+    def calculate_angle(a, b, c):
         a = np.array([a.x, a.y])
         b = np.array([b.x, b.y])
         c = np.array([c.x, c.y])
@@ -46,23 +47,24 @@ class BicepCurlCounter:
             elbow_cords = results.pose_landmarks.landmark[elbow_idx]
             wrist_cords = results.pose_landmarks.landmark[wrist_idx]
 
-            angle = self.calculate_angle(shoulder_cords, elbow_cords, wrist_cords)
+            if shoulder_cords.visibility > 0.5 and elbow_cords.visibility > 0.5 and wrist_cords.visibility > 0.5:
+                angle = self.calculate_angle(shoulder_cords, elbow_cords, wrist_cords)
 
-            if angle > 150:
-                self.stage = "down"
-            elif angle < 45 and self.stage == "down":
-                self.counter +=1
-                self.stage = "up"
+                if angle > 150:
+                    self.stage = "down"
+                elif angle < 50 and self.stage == "down":
+                    self.counter +=1
+                    self.stage = "up"
 
-                print(f"{self.side} arm reps: {self.counter}")
-            cv2.putText(frame, str(int(angle)),
-                        tuple(np.multiply([elbow_cords.x, elbow_cords.y], [w, h]).astype(int)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    print(f"{self.side} arm reps: {self.counter}")
+                cv2.putText(frame, str(int(angle)),
+                            tuple(np.multiply([elbow_cords.x, elbow_cords.y], [w, h]).astype(int)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
-            if self.side == "left":
-                cv2.putText(frame, str(self.counter), (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-            else:
-                cv2.putText(frame, str(self.counter), (w - 100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        if self.side == "left":
+            cv2.putText(frame, str(self.counter), (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        else:
+            cv2.putText(frame, str(self.counter), (w - 100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         return frame
 
 def run_fitness_tracker():
