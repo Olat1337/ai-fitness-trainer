@@ -1,4 +1,7 @@
 import cv2
+import mediapipe as mp
+mp_pose = mp.solutions.pose
+mp_drawing = mp.solutions.drawing_utils
 
 def open_camera():
     cv2.namedWindow('preview')
@@ -9,15 +12,28 @@ def open_camera():
     else:
         rval = False
 
-    while rval:
-        cv2.imshow("preview", frame)
-        rval, frame = vc.read()
-        key = cv2.waitKey(20)
-        if key == 27:
-            break
+    with mp_pose.Pose(min_detection_confidence = 0.5, min_tracking_confidence = 0.5) as pose:
+        while rval:
+            rval, frame = vc.read()
+            key = cv2.waitKey(20)
 
-    cv2.destroyWindow("preview")
-    vc.release()
+            image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = pose.process(image_rgb)
+
+            if results.pose_landmarks:
+                mp_drawing.draw_landmarks(
+                    frame,
+                    results.pose_landmarks,
+                    mp_pose.POSE_CONNECTIONS
+                )
+
+            cv2.imshow("preview", frame)
+
+            if key == 27:
+                break
+
+        cv2.destroyWindow("preview")
+        vc.release()
 
 def main():
     open_camera()
